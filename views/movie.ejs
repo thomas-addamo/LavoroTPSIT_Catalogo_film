@@ -1,0 +1,114 @@
+<div class="movie-detail-hero position-relative">
+    <div class="hero-bg position-absolute top-0 start-0 w-100 h-100 object-fit-cover" style="background-image: url('<%= movie.coverUrl %>');"></div>
+    <div class="hero-overlay position-absolute top-0 start-0 w-100 h-100"></div>
+    
+    <div class="container position-relative z-1 pt-5 pb-5">
+        <div class="mb-4">
+            <a href="/catalog" class="text-light text-decoration-none btn btn-glass rounded-pill px-3 py-2">
+                <i class="bi bi-arrow-left me-2"></i> Torna al catalogo
+            </a>
+        </div>
+        
+        <div class="row align-items-end pb-4 pt-md-5">
+            <div class="col-md-3 mb-4 mb-md-0 d-none d-md-block">
+                <img src="<%= movie.coverUrl %>" class="img-fluid rounded-4 shadow-lg premium-poster" alt="<%= movie.title %>" onerror="this.src='https://via.placeholder.com/400x600?text=No+Cover'">
+            </div>
+            <div class="col-md-9 text-light">
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <span class="badge bg-premium fs-6"><i class="bi bi-star-fill text-warning me-2"></i>
+                        <% if (movie.avgRating > 0) { %>
+                            <%= movie.avgRating %>
+                        <% } else { %>
+                            Nessun voto
+                        <% } %>
+                    </span>
+                    <span class="text-white fw-medium">
+                        <% if (movie.ratings && movie.ratings.length > 0) { %>
+                            <%= movie.ratings.length %>
+                        <% } else { %>
+                            0
+                        <% } %>
+                        voti totali
+                    </span>
+                </div>
+                <h1 class="display-3 fw-bold text-shadow mb-2"><%= movie.title %></h1>
+                <p class="fs-5 text-white mb-4"><i class="bi bi-person-video text-light me-2"></i>Regia di <span class="text-white fw-bold"><%= movie.director %></span></p>
+                <div class="description-box p-4 rounded-4 bg-glass border border-secondary border-opacity-25">
+                    <p class="mb-0 fs-6 lh-lg"><%= movie.description %></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
+                <h3 class="fw-bold text-light mb-0">Recensioni (
+                    <% if (movie.reviews && movie.reviews.length > 0) { %>
+                        <%= movie.reviews.length %>
+                    <% } else { %>
+                        0
+                    <% } %>
+                )</h3>
+                <button class="btn btn-premium-accent rounded-pill" data-bs-toggle="collapse" data-bs-target="#reviewFormCollapse">
+                    <i class="bi bi-pencil-square me-2"></i> Scrivi una recensione
+                </button>
+            </div>
+
+            <!-- Form Recensione (Collapse) -->
+            <div class="collapse mb-5" id="reviewFormCollapse">
+                <div class="card premium-card border-0 p-4">
+                    <h5 class="text-light mb-3">La tua opinione su <em><%= movie.title %></em></h5>
+                    <form action="/movie/<%= movie.id %>/review" method="POST">
+                        <div class="mb-3">
+                            <textarea name="reviewText" class="form-control premium-input border-0 bg-darker text-white" rows="4" placeholder="Cosa ne pensi di questo film? Condividi i tuoi pensieri..." required></textarea>
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-premium-primary rounded-pill px-4">Pubblica recensione <i class="bi bi-send ms-2"></i></button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lista Recensioni -->
+            <div class="reviews-list">
+                <% if (!movie.reviews || movie.reviews.length === 0) { %>
+                    <div class="text-center py-5">
+                        <i class="bi bi-chat-square-text text-muted display-4 mb-3 d-block"></i>
+                        <h5 class="text-light">Nessuna recensione ancora</h5>
+                        <p class="text-muted">Sii il primo a condividere la tua opinione su questo film!</p>
+                    </div>
+                <% } else { %>
+                    <% movie.reviews.forEach(review => { 
+                        const dateObj = new Date(review.date);
+                        let dateString = "Data sconosciuta";
+                        if (!isNaN(dateObj.getTime())) {
+                            dateString = dateObj.toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric' });
+                        }
+                    %>
+                        <div class="card review-card mb-4 border-0 bg-transparent">
+                            <div class="card-body p-0">
+                                <div class="d-flex mb-3">
+                                    <div class="user-avatar-small me-3 d-flex align-items-center justify-content-center">
+                                        <%= review.user.charAt(0).toUpperCase() %>
+                                    </div>
+                                    <div>
+                                        <h6 class="text-light mb-0 fw-bold"><%= review.user %></h6>
+                                        <small class="text-muted"><i class="bi bi-calendar3 me-1"></i> <%= dateString %></small>
+                                    </div>
+                                </div>
+                                <div class="review-text bg-darker p-4 rounded-4 position-relative">
+                                    <i class="bi bi-quote position-absolute top-0 start-0 text-muted opacity-25" style="font-size: 3rem; transform: translate(10px, -10px);"></i>
+                                    <p class="text-light mb-0 position-relative z-1 lh-lg"><%= review.text %></p>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+

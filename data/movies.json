@@ -1,0 +1,30 @@
+[
+  {
+    "id": "1771839743587",
+    "title": "Inception",
+    "description": "Dom Cobb è un ladro specializzato nel rubare segreti entrando nei sogni delle persone. Gli viene offerta una possibilità di redenzione: invece di sottrarre un’idea dovrà impiantarla nella mente di un obiettivo. Per riuscirci dovrà guidare una squadra in un viaggio attraverso livelli sempre più profondi della mente, dove il confine tra realtà e sogno diventa sempre più sottile.",
+    "coverUrl": "https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg",
+    "director": "Christopher Nolan",
+    "ratings": [
+      {
+        "user": "Thomas",
+        "score": 5
+      }
+    ],
+    "reviews": []
+  },
+  {
+    "id": "1771844883854",
+    "title": "Interstellar",
+    "description": "In un futuro in cui la Terra sta diventando inabitabile, un gruppo di astronauti parte per una missione attraverso un wormhole vicino a Saturno alla ricerca di un nuovo pianeta dove l’umanità possa sopravvivere. Tra viaggi nello spazio profondo, relatività del tempo e scelte difficili, il pilota Cooper dovrà affrontare la distanza dalla sua famiglia e il peso di una missione che potrebbe salvare l’intera specie umana.",
+    "coverUrl": "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
+    "director": "Christopher Nolan",
+    "ratings": [
+      {
+        "user": "Thomas",
+        "score": 4
+      }
+    ],
+    "reviews": []
+  }
+]

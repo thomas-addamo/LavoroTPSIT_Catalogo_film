@@ -1,0 +1,380 @@
+:root {
+  --bg-dark: #0b0f19;
+  --bg-darker: #060910;
+  --bg-panel: rgba(20, 26, 40, 0.7);
+  --premium-accent: #00f0ff;
+  --premium-primary: #7000ff;
+  --premium-gradient: linear-gradient(135deg, #7000ff 0%, #00f0ff 100%);
+  --text-main: #ffffff;
+  --text-muted: #cbd5e1;
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.03);
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family:
+    "Outfit",
+    -apple-system,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Utilities */
+.text-muted {
+  color: var(--text-muted) !important;
+}
+.text-light {
+  color: var(--text-main) !important;
+}
+.text-white {
+  color: #ffffff !important;
+}
+.text-gradient {
+  background: var(--premium-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.fw-black {
+  font-weight: 800;
+}
+.tracking-tight {
+  letter-spacing: -0.05em;
+}
+.bg-darker {
+  background-color: var(--bg-darker);
+}
+.bg-glass {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(10px);
+}
+.text-shadow {
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Buttons */
+.btn-premium-primary {
+  background: var(--premium-gradient);
+  color: white;
+  border: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-premium-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(112, 0, 255, 0.4);
+  color: white;
+}
+.btn-premium-accent {
+  background-color: rgba(0, 240, 255, 0.1);
+  color: var(--premium-accent);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  transition: all 0.3s ease;
+}
+.btn-premium-accent:hover {
+  background-color: var(--premium-accent);
+  color: var(--bg-dark);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+}
+.btn-glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+.btn-glass:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+/* Login Hero & Orbs */
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.4;
+  z-index: 0;
+  pointer-events: none;
+}
+.orb-1 {
+  width: 400px;
+  height: 400px;
+  background: var(--premium-primary);
+  top: -100px;
+  left: -100px;
+  animation: float 10s infinite ease-in-out alternate;
+}
+.orb-2 {
+  width: 300px;
+  height: 300px;
+  background: var(--premium-accent);
+  bottom: -50px;
+  right: -50px;
+  animation: float 12s infinite ease-in-out alternate-reverse;
+}
+
+@keyframes float {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    transform: translate(50px, 50px) scale(1.1);
+  }
+}
+
+/* Cards & Inputs */
+.premium-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+.premium-input {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: white !important;
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  transition: all 0.3s ease;
+}
+.premium-input:focus {
+  box-shadow: 0 0 0 2px var(--premium-primary) !important;
+  border-color: var(--premium-primary) !important;
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}
+.premium-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+.premium-input-icon {
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--glass-border);
+  border-right: none;
+  color: var(--text-muted);
+  border-radius: 12px 0 0 12px;
+  padding-left: 1rem;
+}
+.input-group > .premium-input {
+  border-radius: 0 12px 12px 0;
+}
+.custom-alert {
+  background: rgba(220, 53, 69, 0.1);
+  color: #ff6b6b;
+  border: 1px solid rgba(220, 53, 69, 0.2) !important;
+}
+
+/* Navbar */
+.premium-nav {
+  background: rgba(11, 15, 25, 0.8);
+  backdrop-filter: blur(15px);
+  border-bottom: 1px solid var(--glass-border);
+}
+.search-form {
+  min-width: 300px;
+}
+.search-form .input-group {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50px;
+  border: 1px solid var(--glass-border);
+  overflow: hidden;
+}
+.search-form .premium-input {
+  background: transparent !important;
+  border: none !important;
+  padding: 0.5rem 1rem;
+  box-shadow: none !important;
+}
+.search-form .premium-input:focus {
+  background: transparent !important;
+}
+
+.user-avatar,
+.user-avatar-small {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: var(--premium-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+}
+.user-avatar-small {
+  width: 45px;
+  height: 45px;
+  font-size: 1.2rem;
+}
+.premium-dropdown {
+  background: var(--bg-panel);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px);
+}
+.premium-dropdown .dropdown-item {
+  color: var(--text-main);
+  transition: 0.2s;
+}
+.premium-dropdown .dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--premium-accent);
+}
+
+/* Movie Cards */
+.movie-card {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
+  border-radius: 16px;
+}
+.movie-cover {
+  height: 350px;
+  border-radius: 16px 16px 0 0;
+  transition: transform 0.5s ease;
+}
+.card-img-wrapper {
+  overflow: hidden;
+  border-radius: 16px 16px 0 0;
+}
+.card-body {
+  border-radius: 0 0 16px 16px;
+  border: 1px solid var(--glass-border);
+  border-top: none;
+}
+.movie-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+.movie-card:hover .movie-cover {
+  transform: scale(1.05);
+  filter: brightness(0.4);
+}
+
+.rating-badge {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 2;
+}
+
+/* Star Rating Hover UI */
+.rating-overlay {
+  background: rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 3;
+  pointer-events: none; /* Only active when visible */
+}
+.movie-card:hover .rating-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+.star-rating .star {
+  font-size: 1.8rem;
+  color: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: 0.2s;
+  margin: 0 2px;
+}
+.star-rating .star:hover,
+.star-rating .star.hovered {
+  color: #ffc107;
+  transform: scale(1.2);
+}
+.star-rating .star.active {
+  color: #ffc107;
+}
+
+/* Custom stretched link to ignore stars */
+.custom-stretched-link::after {
+  z-index: 1;
+}
+.rating-overlay {
+  z-index: 4;
+  position: relative;
+}
+
+/* Modal */
+.premium-modal {
+  background: var(--bg-panel);
+  backdrop-filter: blur(25px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+/* Movie Detail Hero */
+.movie-detail-hero {
+  min-height: 60vh;
+}
+.hero-bg {
+  filter: blur(20px) brightness(0.3);
+  transform: scale(1.1);
+}
+.hero-overlay {
+  background: linear-gradient(
+    to bottom,
+    rgba(11, 15, 25, 0.2) 0%,
+    rgba(11, 15, 25, 0.8) 50%,
+    #0b0f19 100%
+  );
+}
+.premium-poster {
+  border: 1px solid var(--glass-border);
+}
+.bg-premium {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+}
+
+/* Reviews */
+.review-text::before {
+  content: "";
+  position: absolute;
+  top: 20px;
+  left: -10px;
+  border-width: 10px 10px 10px 0;
+  border-style: solid;
+  border-color: transparent var(--bg-darker) transparent transparent;
+}
+
+/* Animations */
+.fade-in-up {
+  animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.hero-stagger > div {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.6s ease forwards;
+}
+.hero-stagger > div:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.hero-stagger > div:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.hero-stagger > div:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.hero-stagger > div:nth-child(4) {
+  animation-delay: 0.4s;
+}
+.hero-stagger > div:nth-child(5) {
+  animation-delay: 0.5s;
+}
+.hero-stagger > div:nth-child(6) {
+  animation-delay: 0.6s;
+}
+.hero-stagger > div:nth-child(7) {
+  animation-delay: 0.7s;
+}
+.hero-stagger > div:nth-child(8) {
+  animation-delay: 0.8s;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
