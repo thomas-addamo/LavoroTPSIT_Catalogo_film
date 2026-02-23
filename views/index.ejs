@@ -1,9 +1,17 @@
+<!-- 
+    Pagina principale del Catalogo. 
+    Mostra la lista dei film filtrati o l'intero catalogo.
+-->
 <div class="container catalog-container py-5">
+    
+    <!-- Intestazione del catalogo con Titolo e info ricerca -->
     <div class="d-flex justify-content-between align-items-end mb-5 border-bottom border-secondary pb-3">
         <div>
             <h2 class="display-5 fw-bold text-light mb-0">Il Catalogo</h2>
             <p class="text-muted mt-2 mb-0">Scopri, valuta e recensisci i migliori film.</p>
         </div>
+        
+        <!-- Mostra il badge dei risultati solo se è stata effettuata una ricerca -->
         <% if (typeof searchQuery !== 'undefined') { %>
             <% if (searchQuery !== '') { %>
                 <div class="text-end">
@@ -16,6 +24,7 @@
         <% } %>
     </div>
 
+    <!-- Gestione del caso in cui non ci siano film da mostrare (Catalogo vuoto o ricerca fallita) -->
     <% if (movies.length === 0) { %>
         <div class="text-center py-5 empty-state fade-in-up">
             <div class="empty-icon mb-4"><i class="bi bi-film text-muted display-1"></i></div>
@@ -26,14 +35,16 @@
             </button>
         </div>
     <% } else { %>
+        <!-- Griglia dei Film -->
         <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4 hero-stagger">
             <% movies.forEach(movie => { %>
                 <div class="col">
                     <div class="card h-100 movie-card premium-card overflow-hidden border-0">
                         <div class="card-img-wrapper position-relative">
+                            <!-- Copertina del film con gestione dell'errore (immagine placeholder se l'URL non è valido) -->
                             <img src="<%= movie.coverUrl %>" class="card-img-top object-fit-cover movie-cover" alt="<%= movie.title %>" onerror="this.src='https://via.placeholder.com/400x600?text=No+Cover'">
                             
-                            <!-- Overlay for Star Rating on Hover -->
+                            <!-- Overlay per il Sistema di Voto (appare solo al passaggio del mouse/hover) -->
                             <div class="rating-overlay position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center">
                                 <span class="fw-bold text-light mb-2">Valuta:</span>
                                 <div class="star-rating" data-movie-id="<%= movie.id %>">
@@ -45,6 +56,7 @@
                                 </div>
                             </div>
 
+                            <!-- Badge in alto a destra con la media voti corrente -->
                             <div class="rating-badge position-absolute top-0 end-0 m-3 px-2 py-1 rounded">
                                 <i class="bi bi-star-fill text-warning me-1"></i>
                                 <span class="fw-bold text-light average-rating">
@@ -56,9 +68,12 @@
                                 </span>
                             </div>
                         </div>
+                        
+                        <!-- Corpo della Card con Titolo e Regista -->
                         <div class="card-body d-flex flex-column bg-darker text-light">
                             <h5 class="card-title fw-bold text-truncate mb-1"><%= movie.title %></h5>
                             <p class="card-text small text-muted mb-3"><i class="bi bi-person-video me-1"></i> <%= movie.director %></p>
+                            <!-- Bottone collegato alla pagina di dettaglio del film -->
                             <a href="/movie/<%= movie.id %>" class="btn btn-outline-light rounded-pill mt-auto btn-sm w-100 stretched-link custom-stretched-link">Scopri di più</a>
                         </div>
                     </div>
@@ -67,4 +82,3 @@
         </div>
     <% } %>
 </div>
-

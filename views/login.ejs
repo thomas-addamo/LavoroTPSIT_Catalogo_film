@@ -1,5 +1,10 @@
+<!-- 
+    Schermata di Login. 
+    Gestisce l'accesso e la creazione automatica dell'utente.
+-->
 <div class="login-hero d-flex align-items-center justify-content-center min-vh-100 position-relative overflow-hidden">
-    <!-- Decorative background elements -->
+    
+    <!-- Elementi decorativi di sfondo (sfere luminose definite nel CSS) -->
     <div class="glow-orb orb-1"></div>
     <div class="glow-orb orb-2"></div>
     
@@ -7,18 +12,24 @@
         <div class="row justify-content-center">
             <div class="col-12 col-md-8 col-lg-5">
                 <div class="premium-card login-card p-5 text-center fade-in-up">
+                    
+                    <!-- Logo e descrizione dell'app -->
                     <div class="brand-logo mb-4">
                         <h1 class="display-4 fw-black text-gradient mb-0 tracking-tight">Stellar</h1>
                         <p class="text-muted mt-2">Il tuo catalogo cinematografico premium</p>
                     </div>
 
+                    <!-- Messaggio di errore visualizzato solo in caso di fallimento login -->
                     <% if (typeof error !== 'undefined' && error) { %>
                         <div class="alert alert-danger custom-alert border-0 rounded-4" role="alert">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i> <%= error %>
                         </div>
                     <% } %>
 
+                    <!-- Form di Login: invia i dati a /login tramite metodo POST -->
                     <form action="/login" method="POST" class="mt-4 text-start">
+                        
+                        <!-- Campo Nome Utente -->
                         <div class="mb-4 input-wrapper">
                             <label for="username" class="form-label text-muted small fw-semibold ms-1">Nome Utente</label>
                             <div class="input-group">
@@ -26,6 +37,8 @@
                                 <input type="text" class="form-control premium-input" id="username" name="username" placeholder="Inserisci il tuo nome" required autocomplete="username">
                             </div>
                         </div>
+                        
+                        <!-- Campo Email -->
                         <div class="mb-5 input-wrapper">
                             <label for="email" class="form-label text-muted small fw-semibold ms-1">Email</label>
                             <div class="input-group">
@@ -33,10 +46,14 @@
                                 <input type="email" class="form-control premium-input" id="email" name="email" placeholder="nome@esempio.com" required autocomplete="email">
                             </div>
                         </div>
+                        
+                        <!-- Bottone di invio -->
                         <button type="submit" class="btn btn-premium-primary w-100 py-3 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2">
                             <span>Entra nel Catalogo</span>
                             <i class="bi bi-arrow-right"></i>
                         </button>
+                        
+                        <!-- Nota informativa sulla registrazione automatica -->
                         <p class="text-center text-muted mt-4 small mb-0">Se non hai un account, verrà creato automaticamente.</p>
                     </form>
                 </div>
@@ -44,4 +61,3 @@
         </div>
     </div>
 </div>
-

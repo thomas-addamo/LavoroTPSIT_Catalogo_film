@@ -1,32 +1,45 @@
+/**
+ * Questo script gestisce le interazioni dinamiche sul client, 
+ * come il sistema di voto con le stelle e la gestione della modale.
+ */
 document.addEventListener('DOMContentLoaded', () => {
     
-    // Star Rating Logic
+    // --- Logica per il Sistema di Voto con le Stelle ---
+    
+    // Seleziona tutti i contenitori di stelle nelle card dei film
     const starContainers = document.querySelectorAll('.star-rating');
 
     starContainers.forEach(container => {
         const stars = container.querySelectorAll('.star');
         const movieId = container.getAttribute('data-movie-id');
 
-        // Hover effects
+        // Aggiunge gli eventi per ogni singola stella dentro il contenitore
         stars.forEach(star => {
+            
+            // Effetto hover: illumina le stelle quando il mouse passa sopra
             star.addEventListener('mouseenter', () => {
                 const rating = parseInt(star.getAttribute('data-rating'));
                 highlightStars(stars, rating);
             });
 
+            // Reset: toglie l'illuminazione quando il mouse esce
             star.addEventListener('mouseleave', () => {
                 resetStars(stars);
             });
 
-            // Click to rate (AJAX)
+            /**
+             * Click per votare: invia una richiesta AJAX (fetch) al server
+             * per registrare il voto senza ricaricare l'intera pagina immediatamente.
+             */
             star.addEventListener('click', async (e) => {
-                // Prevent event bubbling to the card's a href link
+                // Impedisce che il click sulla stella attivi anche il link della card
                 e.preventDefault();
                 e.stopPropagation();
 
                 const rating = parseInt(star.getAttribute('data-rating'));
                 
                 try {
+                    // Chiamata POST all'API del server
                     const response = await fetch(`/api/movies/${movieId}/rate`, {
                         method: 'POST',
                         headers: {
@@ -38,19 +51,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     const result = await response.json();
 
                     if (result.success) {
-                        // Visual feedback (animation)
+                        // Feedback visivo immediato all'utente
                         container.innerHTML = `<span class="text-success fw-bold fade-in-up"><i class="bi bi-check-circle-fill me-1"></i> Voto ${rating} inviato!</span>`;
                         
-                        // Update the badge on the card
+                        // Aggiorna il badge della media dei voti sulla card se presente
                         const card = container.closest('.movie-card');
                         if (card) {
                             const badge = card.querySelector('.average-rating');
                             if (badge) badge.innerText = result.avgRating;
                         }
 
-                        // Restore stars after 2 seconds
+                        // Ricarica la pagina dopo un secondo per riflettere i cambiamenti ovunque
                         setTimeout(() => {
-                            window.location.reload(); // Reload to reflect changes globally for simplicity and coherence
+                            window.location.reload(); 
                         }, 1000);
                     }
                 } catch (error) {
@@ -61,35 +74,45 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    /**
+     * Funzione per illuminare le stelle fino a quella selezionata (effetto hover).
+     */
     function highlightStars(stars, rating) {
         stars.forEach(star => {
             const currentRating = parseInt(star.getAttribute('data-rating'));
             if (currentRating <= rating) {
-                star.classList.add('hovered');
+                star.classList.add('hovered'); // Aggiunge la classe CSS per l'illuminazione
             } else {
                 star.classList.remove('hovered');
             }
         });
     }
 
+    /**
+     * Funzione per rimuovere l'effetto hover da tutte le stelle.
+     */
     function resetStars(stars) {
         stars.forEach(star => {
             star.classList.remove('hovered');
         });
     }
 
-    // Modal Focus fix for Bootstrap 5
+    // --- Miglioramenti UX per le Modali di Bootstrap 5 ---
+
+    // Quando si apre la modale per aggiungere un film, mette automaticamente il focus sul campo Titolo
     const addMovieModal = document.getElementById('addMovieModal');
     if (addMovieModal) {
         addMovieModal.addEventListener('shown.bs.modal', () => {
-            addMovieModal.querySelector('input[name="title"]').focus();
+            const titleInput = addMovieModal.querySelector('input[name="title"]');
+            if (titleInput) titleInput.focus();
         });
     }
 
-    // Auto-search UX enhancement (optional, could be used to submit form on typing pause)
+    // --- Gestione della barra di ricerca ---
+
     const searchInput = document.querySelector('.search-form input[type="search"]');
     if (searchInput) {
-        // Just keeping focus at the end of the input if it has a value
+        // Se c'è già un testo cercato, posiziona il cursore alla fine della parola
         if (searchInput.value) {
             const length = searchInput.value.length;
             searchInput.setSelectionRange(length, length);

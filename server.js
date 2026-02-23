@@ -8,28 +8,42 @@ const path = require("path");
 const app = express();
 const PORT = 3000;
 
-// Middleware classici
+// --- Configurazione Middleware ---
+
+// Imposta EJS come motore di template
 app.set("view engine", "ejs");
+// Definisce la cartella dove si trovano i file .ejs
 app.set("views", path.join(__dirname, "views"));
+// Abilita l'utilizzo dei layout per non ripetere header e footer in ogni pagina
 app.use(expressLayouts);
+// Specifica il file di layout predefinito (views/layout.ejs)
 app.set("layout", "layout");
+// Rende accessibili i file statici (CSS, JS client, immagini) dalla cartella 'public'
 app.use(express.static(path.join(__dirname, "public")));
+// Configura body-parser per leggere i dati inviati tramite i form (POST)
 app.use(bodyParser.urlencoded({ extended: true }));
+// Configura body-parser per leggere i dati inviati in formato JSON
 app.use(bodyParser.json());
 
+// Configurazione della sessione per gestire il login dell'utente
 app.use(
   session({
-    secret: "super-premium-movie-catalog-secret",
-    resave: false,
-    saveUninitialized: false,
+    secret: "super-premium-movie-catalog-secret", // Chiave per firmare il cookie della sessione
+    resave: false,               // Non salva la sessione se non ci sono modifiche
+    saveUninitialized: false,    // Non crea sessioni vuote per utenti non loggati
   })
 );
 
-// File paths
+// Percorsi dei file JSON che fungono da database
 const USERS_FILE = path.join(__dirname, "data", "users.json");
 const MOVIES_FILE = path.join(__dirname, "data", "movies.json");
 
-// Funzioni classiche per i file
+// --- Funzioni di utilità per il Database (JSON) ---
+
+/**
+ * Legge i dati da un file JSON e li restituisce come array/oggetto.
+ * Se il file non esiste o c'è un errore, restituisce un array vuoto.
+ */
 function readData(filePath) {
   try {
     if (fs.existsSync(filePath) === false) {
@@ -43,6 +57,9 @@ function readData(filePath) {
   }
 }
 
+/**
+ * Scrive i dati forniti nel file JSON specificato.
+ */
 function writeData(filePath, data) {
   try {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
@@ -51,17 +68,21 @@ function writeData(filePath, data) {
   }
 }
 
-// Controllo Login
+/**
+ * Middleware di autenticazione: controlla se l'utente è loggato.
+ * Se non lo è, lo reindirizza alla pagina di login.
+ */
 function requireAuth(req, res, next) {
   if (req.session.user) {
-    next();
+    next(); // Utente loggato, procedi alla rotta successiva
   } else {
-    res.redirect("/login");
+    res.redirect("/login"); // Utente non loggato, vai al login
   }
 }
 
-// --- Rotte base ---
+// --- Rotte Base ---
 
+// Home page: reindirizza al catalogo se loggato, altrimenti al login
 app.get("/", function (req, res) {
   if (req.session.user) {
     res.redirect("/catalog");
@@ -70,6 +91,7 @@ app.get("/", function (req, res) {
   }
 });
 
+// Pagina di Login (GET)
 app.get("/login", function (req, res) {
   if (req.session.user) {
     res.redirect("/catalog");
@@ -78,6 +100,10 @@ app.get("/login", function (req, res) {
   }
 });
 
+/**
+ * Gestione del Login (POST): registra l'utente se non esiste
+ * o lo autentica se le credenziali (semplificate) corrispondono.
+ */
 app.post("/login", function (req, res) {
   const username = req.body.username;
   const email = req.body.email;
@@ -90,6 +116,7 @@ app.post("/login", function (req, res) {
   let users = readData(USERS_FILE);
   let userFound = null;
 
+  // Cerca se l'utente esiste già nel database JSON
   for (let i = 0; i < users.length; i++) {
     if (users[i].email === email && users[i].username === username) {
       userFound = users[i];
@@ -97,23 +124,30 @@ app.post("/login", function (req, res) {
     }
   }
 
+  // Se l'utente non esiste, lo crea al volo (Registrazione automatica)
   if (userFound === null) {
     userFound = { username: username, email: email };
     users.push(userFound);
     writeData(USERS_FILE, users);
   }
 
+  // Salva l'utente nella sessione
   req.session.user = userFound;
   res.redirect("/catalog");
 });
 
+// Logout: distrugge la sessione e torna al login
 app.get("/logout", function (req, res) {
   req.session.destroy();
   res.redirect("/login");
 });
 
-// --- Catalogo ---
+// --- Rotte Catalogo e API ---
 
+/**
+ * Visualizzazione del Catalogo Film.
+ * Supporta la ricerca tramite il parametro query 'search'.
+ */
 app.get("/catalog", requireAuth, function (req, res) {
   let searchQuery = "";
   if (req.query.search) {
@@ -123,6 +157,7 @@ app.get("/catalog", requireAuth, function (req, res) {
   let movies = readData(MOVIES_FILE);
   let filteredMovies = [];
 
+  // Filtra i film in base alla ricerca (case-insensitive)
   if (searchQuery !== "") {
     for (let i = 0; i < movies.length; i++) {
       let titleLower = movies[i].title.toLowerCase();
@@ -133,21 +168,21 @@ app.get("/catalog", requireAuth, function (req, res) {
     movies = filteredMovies;
   }
 
-  // Calcolo media dei voti senza funzioni complicate
+  // Calcola la media dei voti per ogni film prima di renderizzare la pagina
   for (let i = 0; i < movies.length; i++) {
     let avgRating = 0;
     
     if (movies[i].ratings && movies[i].ratings.length > 0) {
       let sum = 0;
       for (let j = 0; j < movies[i].ratings.length; j++) {
-        // Fix per rating: prima era un numero, ora sara un oggetto {user, score}
-        // ma consideriamo sia numeri vecchi che oggetti nuovi per compatibilita
+        // Gestione compatibilità: i voti possono essere numeri o oggetti {user, score}
         if (typeof movies[i].ratings[j] === 'number') {
            sum = sum + movies[i].ratings[j];
         } else {
            sum = sum + movies[i].ratings[j].score;
         }
       }
+      // Arrotonda la media a una cifra decimale
       avgRating = (sum / movies[i].ratings.length).toFixed(1);
     }
     
@@ -161,6 +196,9 @@ app.get("/catalog", requireAuth, function (req, res) {
   });
 });
 
+/**
+ * API per aggiungere un nuovo film al catalogo.
+ */
 app.post("/api/movies", requireAuth, function (req, res) {
   const title = req.body.title;
   const description = req.body.description;
@@ -174,6 +212,7 @@ app.post("/api/movies", requireAuth, function (req, res) {
 
   let movies = readData(MOVIES_FILE);
   
+  // Crea l'oggetto del nuovo film con un ID univoco basato sul timestamp
   const newMovie = {
     id: Date.now().toString(),
     title: title,
@@ -190,7 +229,10 @@ app.post("/api/movies", requireAuth, function (req, res) {
   res.redirect("/catalog");
 });
 
-// Voto - Limite 1 voto per utente
+/**
+ * API per votare un film.
+ * Ogni utente può votare un film una sola volta; se vota di nuovo, il voto precedente viene aggiornato.
+ */
 app.post("/api/movies/:id/rate", requireAuth, function (req, res) {
   const movieId = req.params.id;
   const ratingScore = parseInt(req.body.rating, 10);
@@ -220,25 +262,25 @@ app.post("/api/movies/:id/rate", requireAuth, function (req, res) {
     movieFound.ratings = [];
   }
 
-  // Convert old ratings to {user: 'Unknown', score: number} to avoid crashes
+  // Converte i vecchi voti numerici nel nuovo formato oggetto per evitare crash
   for (let s = 0; s < movieFound.ratings.length; s++) {
     if (typeof movieFound.ratings[s] === 'number') {
        movieFound.ratings[s] = { user: "Vecchio Utente " + s, score: movieFound.ratings[s] };
     }
   }
 
-  // Controllo se l'utente ha già votato
+  // Controlla se l'utente ha già votato questo film
   let userAlreadyRated = false;
   for (let j = 0; j < movieFound.ratings.length; j++) {
     if (movieFound.ratings[j].user === currentUser) {
-      // Modifica il voto esistente
+      // Se trovato, aggiorna il punteggio esistente
       movieFound.ratings[j].score = ratingScore;
       userAlreadyRated = true;
       break;
     }
   }
 
-  // Se non ha votato aggiunge nuovo
+  // Se l'utente non ha mai votato, aggiunge un nuovo record
   if (userAlreadyRated === false) {
     movieFound.ratings.push({
       user: currentUser,
@@ -248,7 +290,7 @@ app.post("/api/movies/:id/rate", requireAuth, function (req, res) {
 
   writeData(MOVIES_FILE, movies);
 
-  // Ricalcolo nuova media
+  // Ricalcola la nuova media per inviarla come risposta alla chiamata AJAX
   let sum = 0;
   for (let k = 0; k < movieFound.ratings.length; k++) {
     sum = sum + movieFound.ratings[k].score;
@@ -258,6 +300,9 @@ app.post("/api/movies/:id/rate", requireAuth, function (req, res) {
   res.json({ success: true, avgRating: avgRating });
 });
 
+/**
+ * Pagina dei dettagli di un singolo film.
+ */
 app.get("/movie/:id", requireAuth, function (req, res) {
   const movieId = req.params.id;
   let movies = readData(MOVIES_FILE);
@@ -275,6 +320,7 @@ app.get("/movie/:id", requireAuth, function (req, res) {
     return;
   }
 
+  // Calcolo della media voti specifica per questo film
   let avgRating = 0;
   if (movieFound.ratings && movieFound.ratings.length > 0) {
     let sum = 0;
@@ -296,11 +342,15 @@ app.get("/movie/:id", requireAuth, function (req, res) {
   });
 });
 
+/**
+ * API per aggiungere una recensione testuale a un film.
+ */
 app.post("/movie/:id/review", requireAuth, function (req, res) {
   const movieId = req.params.id;
   const reviewText = req.body.reviewText;
 
   if (reviewText === "") {
+    // Se la recensione è vuota, ricarica semplicemente la pagina
     res.redirect("/movie/" + movieId);
     return;
   }
@@ -320,6 +370,7 @@ app.post("/movie/:id/review", requireAuth, function (req, res) {
       movieFound.reviews = [];
     }
     
+    // Aggiunge la recensione con autore e data corrente in formato ISO
     movieFound.reviews.push({
       user: req.session.user.username,
       text: reviewText,
@@ -332,6 +383,7 @@ app.post("/movie/:id/review", requireAuth, function (req, res) {
   res.redirect("/movie/" + movieId);
 });
 
+// Avvio del server sulla porta definita
 app.listen(PORT, function () {
   console.log("Server avviato sulla porta " + PORT);
 });
