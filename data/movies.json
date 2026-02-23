@@ -9,6 +9,10 @@
       {
         "user": "Thomas",
         "score": 5
+      },
+      {
+        "user": "Matteo",
+        "score": 3
       }
     ],
     "reviews": []
@@ -22,6 +26,44 @@
     "ratings": [
       {
         "user": "Thomas",
+        "score": 4
+      },
+      {
+        "user": "Matteo",
+        "score": 5
+      }
+    ],
+    "reviews": []
+  },
+  {
+    "id": "1771850071181",
+    "title": "The Dark Knight",
+    "description": "Batman affronta il suo nemico più imprevedibile, il Joker, che semina caos e mette alla prova i limiti morali dell’eroe e dell’intera città di Gotham.",
+    "coverUrl": "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
+    "director": "Christopher Nolan",
+    "ratings": [
+      {
+        "user": "Matteo",
+        "score": 5
+      }
+    ],
+    "reviews": [
+      {
+        "user": "Matteo",
+        "text": "Miglior film di Batman Mai fatto ",
+        "date": "2026-02-23T12:35:50.291Z"
+      }
+    ]
+  },
+  {
+    "id": "1771850105048",
+    "title": "The Matrix",
+    "description": "Un hacker scopre che la realtà che conosce è in realtà una simulazione creata dalle macchine e si unisce alla resistenza umana per liberare l’umanità dal controllo della Matrix.",
+    "coverUrl": "https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
+    "director": "Lana e Lilly Wachowski",
+    "ratings": [
+      {
+        "user": "Matteo",
         "score": 4
       }
     ],
