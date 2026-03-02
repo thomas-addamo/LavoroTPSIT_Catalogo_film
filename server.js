@@ -42,7 +42,7 @@ app.use(bodyParser.json());                         // Per i dati in formato JSO
 
 // Configuriamo le sessioni: tengono traccia di chi è loggato
 app.use(session({
-  secret: "parola-segreta-super-sicura", // Parola segreta per proteggere il cookie
+  secret: "segreto-di-stato", // Parola segreta per proteggere il cookie
   resave: false,            // Non salva la sessione se non cambia nulla
   saveUninitialized: false  // Non crea sessioni per chi non è loggato
 }));
