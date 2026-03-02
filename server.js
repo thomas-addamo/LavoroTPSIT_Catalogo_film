@@ -1,389 +1,456 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const session = require("express-session");
-const expressLayouts = require("express-ejs-layouts");
-const fs = require("fs");
-const path = require("path");
+// =============================================================
+//  📦 IMPORTAZIONE MODULI
+//  Qui diciamo a Node.js quali "strumenti" vogliamo usare
+// =============================================================
 
-const app = express();
-const PORT = 3000;
+const express = require("express");                 // Express: il framework per il server web
+const bodyParser = require("body-parser");          // Legge i dati inviati dai form
+const session = require("express-session");         // Gestisce le sessioni (login utente)
+const ejsLayouts = require("express-ejs-layouts");  // Permette di avere header/footer comuni
+const fs = require("fs");                           // Legge e scrive file sul disco
+const path = require("path");                       // Aiuta a costruire percorsi di file
 
-// --- Configurazione Middleware ---
+// =============================================================
+//  🚀 CREAZIONE DEL SERVER
+//  Creiamo il server e diciamo su quale porta ascoltare
+// =============================================================
 
-// Imposta EJS come motore di template
+const app  = express();   // Creiamo l'applicazione Express
+const PORT = 3000;        // Il server risponderà su http://localhost:3000
+
+// =============================================================
+//  ⚙️ CONFIGURAZIONE DEL SERVER
+//  Qui impostiamo tutte le opzioni di base
+// =============================================================
+
+// Usiamo EJS come linguaggio per le pagine HTML dinamiche
 app.set("view engine", "ejs");
-// Definisce la cartella dove si trovano i file .ejs
+
+// Diciamo a Express dove si trovano le nostre pagine (.ejs)
 app.set("views", path.join(__dirname, "views"));
-// Abilita l'utilizzo dei layout per non ripetere header e footer in ogni pagina
-app.use(expressLayouts);
-// Specifica il file di layout predefinito (views/layout.ejs)
-app.set("layout", "layout");
-// Rende accessibili i file statici (CSS, JS client, immagini) dalla cartella 'public'
+
+// Attiviamo i layout (un unico file ha header e footer per tutte le pagine)
+app.use(ejsLayouts);
+app.set("layout", "layout"); // Il file di layout si chiama "layout.ejs"
+
+// Rendiamo accessibili i file statici (CSS, immagini, JS) dalla cartella "public"
 app.use(express.static(path.join(__dirname, "public")));
-// Configura body-parser per leggere i dati inviati tramite i form (POST)
-app.use(bodyParser.urlencoded({ extended: true }));
-// Configura body-parser per leggere i dati inviati in formato JSON
-app.use(bodyParser.json());
 
-// Configurazione della sessione per gestire il login dell'utente
-app.use(
-  session({
-    secret: "super-premium-movie-catalog-secret", // Chiave per firmare il cookie della sessione
-    resave: false,               // Non salva la sessione se non ci sono modifiche
-    saveUninitialized: false,    // Non crea sessioni vuote per utenti non loggati
-  })
-);
+// Diciamo al server come leggere i dati inviati dai form HTML
+app.use(bodyParser.urlencoded({ extended: true })); // Per i form normali
+app.use(bodyParser.json());                         // Per i dati in formato JSON
 
-// Percorsi dei file JSON che fungono da database
-const USERS_FILE = path.join(__dirname, "data", "users.json");
-const MOVIES_FILE = path.join(__dirname, "data", "movies.json");
+// Configuriamo le sessioni: tengono traccia di chi è loggato
+app.use(session({
+  secret: "parola-segreta-super-sicura", // Parola segreta per proteggere il cookie
+  resave: false,            // Non salva la sessione se non cambia nulla
+  saveUninitialized: false  // Non crea sessioni per chi non è loggato
+}));
 
-// --- Funzioni di utilità per il Database (JSON) ---
+// =============================================================
+//  📁 PERCORSI AI FILE DATABASE (JSON)
+//  Usiamo file JSON come database semplice (niente MySQL!)
+// =============================================================
 
-/**
- * Legge i dati da un file JSON e li restituisce come array/oggetto.
- * Se il file non esiste o c'è un errore, restituisce un array vuoto.
- */
-function readData(filePath) {
-  try {
-    if (fs.existsSync(filePath) === false) {
-      return [];
-    }
-    const data = fs.readFileSync(filePath, "utf8");
-    return JSON.parse(data);
-  } catch (err) {
-    console.error("Errore lettura:", err);
+const FILE_UTENTI = path.join(__dirname, "data", "users.json");   // Lista utenti
+const FILE_FILM   = path.join(__dirname, "data", "movies.json");  // Lista film
+
+// =============================================================
+//  🛠️ FUNZIONI UTILI
+//  Funzioni helper che usiamo più volte nel codice
+// =============================================================
+
+// ----------------------------------------------------------
+// FUNZIONE: leggi i dati da un file JSON
+// Restituisce i dati come array. Se il file non esiste, restituisce []
+// ----------------------------------------------------------
+function leggiFile(percorso) {
+  // Se il file non esiste, restituiamo un array vuoto
+  if (!fs.existsSync(percorso)) {
     return [];
   }
-}
 
-/**
- * Scrive i dati forniti nel file JSON specificato.
- */
-function writeData(filePath, data) {
   try {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
-  } catch (err) {
-    console.error("Errore scrittura:", err);
+    var contenuto = fs.readFileSync(percorso, "utf8"); // Legge il file
+    return JSON.parse(contenuto);                       // Converte il testo JSON in oggetto JS
+  } catch (errore) {
+    console.error("Errore lettura file:", errore);
+    return []; // Se c'è un errore, restituiamo comunque un array vuoto
   }
 }
 
-/**
- * Middleware di autenticazione: controlla se l'utente è loggato.
- * Se non lo è, lo reindirizza alla pagina di login.
- */
-function requireAuth(req, res, next) {
-  if (req.session.user) {
-    next(); // Utente loggato, procedi alla rotta successiva
+// ----------------------------------------------------------
+// FUNZIONE: scrivi i dati in un file JSON
+// Salva l'array/oggetto come testo JSON formattato
+// ----------------------------------------------------------
+function scriviFile(percorso, dati) {
+  try {
+    var testo = JSON.stringify(dati, null, 2); // Converte in testo JSON, con indentazione di 2 spazi
+    fs.writeFileSync(percorso, testo, "utf8"); // Scrive sul disco
+  } catch (errore) {
+    console.error("Errore scrittura file:", errore);
+  }
+}
+
+// ----------------------------------------------------------
+// FUNZIONE: calcola la media dei voti di un film
+// Restituisce la media arrotondata a 1 decimale (es: "3.7")
+// Se non ci sono voti, restituisce 0
+// ----------------------------------------------------------
+function calcolaMedia(voti) {
+  // Se non ci sono voti, ritorna 0
+  if (!voti || voti.length === 0) {
+    return 0;
+  }
+
+  var totale = 0;
+
+  for (var i = 0; i < voti.length; i++) {
+    var voto = voti[i];
+
+    // Compatibilità: i vecchi voti sono numeri, i nuovi sono oggetti {user, score}
+    if (typeof voto === "number") {
+      totale = totale + voto;
+    } else {
+      totale = totale + voto.score;
+    }
+  }
+
+  // Dividiamo il totale per il numero di voti e arrotondiamo a 1 decimale
+  var media = (totale / voti.length).toFixed(1);
+  return media;
+}
+
+// ----------------------------------------------------------
+// FUNZIONE: cerca un film per ID nell'array film
+// Restituisce il film trovato, oppure null se non esiste
+// ----------------------------------------------------------
+function trovaFilmPerId(film, id) {
+  for (var i = 0; i < film.length; i++) {
+    if (film[i].id === id) {
+      return film[i]; // Film trovato!
+    }
+  }
+  return null; // Nessun film trovato
+}
+
+// ----------------------------------------------------------
+// MIDDLE: controlla se l'utente è loggato
+// Se non è loggato, lo manda alla pagina di login
+// Questa funzione si usa come "guardia" davanti alle rotte protette
+// ----------------------------------------------------------
+function controllaLogin(req, res, next) {
+  if (req.session.utente) {
+    next(); // L'utente è loggato: vai avanti normalmente
   } else {
-    res.redirect("/login"); // Utente non loggato, vai al login
+    res.redirect("/login"); // Non loggato: vai al login
   }
 }
 
-// --- Rotte Base ---
+// =============================================================
+//  🏠 ROTTA HOME  →  GET /
+//  La pagina principale: manda al catalogo se loggato
+//  altrimenti manda al login
+// =============================================================
 
-// Home page: reindirizza al catalogo se loggato, altrimenti al login
 app.get("/", function (req, res) {
-  if (req.session.user) {
-    res.redirect("/catalog");
+  if (req.session.utente) {
+    res.redirect("/catalog"); // Già loggato → vai al catalogo
   } else {
-    res.redirect("/login");
+    res.redirect("/login");   // Non loggato → vai al login
   }
 });
 
-// Pagina di Login (GET)
+// =============================================================
+//  🔐 ROTTE LOGIN  →  GET e POST /login
+// =============================================================
+
+// Mostra la pagina di login
 app.get("/login", function (req, res) {
-  if (req.session.user) {
+  // Se è già loggato, non ha senso stare al login: vai al catalogo
+  if (req.session.utente) {
     res.redirect("/catalog");
-  } else {
-    res.render("login", { error: null });
-  }
-});
-
-/**
- * Gestione del Login (POST): registra l'utente se non esiste
- * o lo autentica se le credenziali (semplificate) corrispondono.
- */
-app.post("/login", function (req, res) {
-  const username = req.body.username;
-  const email = req.body.email;
-
-  if (username === "" || email === "") {
-    res.render("login", { error: "Inserisci nome utente ed email." });
     return;
   }
 
-  let users = readData(USERS_FILE);
-  let userFound = null;
+  // Mostra la pagina di login senza nessun messaggio di errore
+  res.render("login", { error: null });
+});
 
-  // Cerca se l'utente esiste già nel database JSON
-  for (let i = 0; i < users.length; i++) {
-    if (users[i].email === email && users[i].username === username) {
-      userFound = users[i];
-      break;
+// Gestisce il form di login (quando l'utente clicca "Entra")
+app.post("/login", function (req, res) {
+  var username = req.body.username;
+  var email    = req.body.email;
+
+  // Controlla che i campi non siano vuoti
+  if (!username || !email) {
+    res.render("login", { error: "Inserisci nome utente ed email!" });
+    return;
+  }
+
+  // Carica tutti gli utenti dal file JSON
+  var utenti    = leggiFile(FILE_UTENTI);
+  var utenteTrovato = null;
+
+  // Cerca se esiste già un utente con quella username e quella email
+  for (var i = 0; i < utenti.length; i++) {
+    if (utenti[i].username === username && utenti[i].email === email) {
+      utenteTrovato = utenti[i];
+      break; // Trovato! Usciamo dal ciclo
     }
   }
 
-  // Se l'utente non esiste, lo crea al volo (Registrazione automatica)
-  if (userFound === null) {
-    userFound = { username: username, email: email };
-    users.push(userFound);
-    writeData(USERS_FILE, users);
+  // Se non esiste, lo registriamo al volo (registrazione automatica)
+  if (utenteTrovato === null) {
+    utenteTrovato = { username: username, email: email };
+    utenti.push(utenteTrovato);            // Aggiunge l'utente all'array
+    scriviFile(FILE_UTENTI, utenti);       // Salva il file aggiornato
   }
 
-  // Salva l'utente nella sessione
-  req.session.user = userFound;
-  res.redirect("/catalog");
+  // Salviamo l'utente nella sessione (così rimane loggato)
+  req.session.utente = utenteTrovato;
+  res.redirect("/catalog"); // Vai al catalogo!
 });
 
-// Logout: distrugge la sessione e torna al login
+// =============================================================
+//  🚪 ROTTA LOGOUT  →  GET /logout
+//  Distrugge la sessione e torna al login
+// =============================================================
+
 app.get("/logout", function (req, res) {
-  req.session.destroy();
+  req.session.destroy(); // Cancella la sessione (= "esci dall'account")
   res.redirect("/login");
 });
 
-// --- Rotte Catalogo e API ---
+// =============================================================
+//  🎬 ROTTA CATALOGO  →  GET /catalog
+//  Mostra tutti i film. Supporta la ricerca per titolo.
+//  ⚠️ Protetta: solo utenti loggati possono vederla
+// =============================================================
 
-/**
- * Visualizzazione del Catalogo Film.
- * Supporta la ricerca tramite il parametro query 'search'.
- */
-app.get("/catalog", requireAuth, function (req, res) {
-  let searchQuery = "";
+app.get("/catalog", controllaLogin, function (req, res) {
+  // Legge il testo cercato dall'URL (es: /catalog?search=titanic)
+  var ricerca = "";
   if (req.query.search) {
-    searchQuery = req.query.search.toLowerCase();
+    ricerca = req.query.search.toLowerCase(); // Convertiamo in minuscolo per cercare meglio
   }
-  
-  let movies = readData(MOVIES_FILE);
-  let filteredMovies = [];
 
-  // Filtra i film in base alla ricerca (case-insensitive)
-  if (searchQuery !== "") {
-    for (let i = 0; i < movies.length; i++) {
-      let titleLower = movies[i].title.toLowerCase();
-      if (titleLower.includes(searchQuery)) {
-        filteredMovies.push(movies[i]);
+  // Carica tutti i film dal file JSON
+  var tuttiIFilm = leggiFile(FILE_FILM);
+  var filmDaMostrare = tuttiIFilm; // Di default mostra tutti i film
+
+  // Se l'utente ha scritto qualcosa nella ricerca, filtra i film
+  if (ricerca !== "") {
+    filmDaMostrare = []; // Partiamo da un array vuoto
+
+    for (var i = 0; i < tuttiIFilm.length; i++) {
+      var titoloMinuscolo = tuttiIFilm[i].title.toLowerCase();
+
+      // Aggiungiamo il film solo se il titolo contiene la parola cercata
+      if (titoloMinuscolo.includes(ricerca)) {
+        filmDaMostrare.push(tuttiIFilm[i]);
       }
     }
-    movies = filteredMovies;
   }
 
-  // Calcola la media dei voti per ogni film prima di renderizzare la pagina
-  for (let i = 0; i < movies.length; i++) {
-    let avgRating = 0;
-    
-    if (movies[i].ratings && movies[i].ratings.length > 0) {
-      let sum = 0;
-      for (let j = 0; j < movies[i].ratings.length; j++) {
-        // Gestione compatibilità: i voti possono essere numeri o oggetti {user, score}
-        if (typeof movies[i].ratings[j] === 'number') {
-           sum = sum + movies[i].ratings[j];
-        } else {
-           sum = sum + movies[i].ratings[j].score;
-        }
-      }
-      // Arrotonda la media a una cifra decimale
-      avgRating = (sum / movies[i].ratings.length).toFixed(1);
-    }
-    
-    movies[i].avgRating = avgRating;
+  // Calcola la media voti per ogni film prima di mandare i dati alla pagina
+  for (var j = 0; j < filmDaMostrare.length; j++) {
+    filmDaMostrare[j].avgRating = calcolaMedia(filmDaMostrare[j].ratings);
   }
 
+  // Manda i dati alla pagina "index.ejs"
   res.render("index", {
-    user: req.session.user,
-    movies: movies,
-    searchQuery: searchQuery,
+    user: req.session.utente,    // Info sull'utente loggato
+    movies: filmDaMostrare,      // Lista dei film
+    searchQuery: ricerca         // Parola cercata (per mostrarlo nel campo di ricerca)
   });
 });
 
-/**
- * API per aggiungere un nuovo film al catalogo.
- */
-app.post("/api/movies", requireAuth, function (req, res) {
-  const title = req.body.title;
-  const description = req.body.description;
-  const coverUrl = req.body.coverUrl;
-  const director = req.body.director;
+// =============================================================
+//  ➕ API AGGIUNGI FILM  →  POST /api/movies
+//  Aggiunge un nuovo film al catalogo
+//  ⚠️ Protetta: solo utenti loggati possono usarla
+// =============================================================
 
-  if (title === "" || description === "" || coverUrl === "" || director === "") {
-    res.status(400).send("Parametri mancanti");
+app.post("/api/movies", controllaLogin, function (req, res) {
+  var titolo       = req.body.title;
+  var descrizione  = req.body.description;
+  var copertina    = req.body.coverUrl;
+  var regista      = req.body.director;
+
+  // Controllo: tutti i campi devono essere compilati
+  if (!titolo || !descrizione || !copertina || !regista) {
+    res.status(400).send("Devi compilare tutti i campi!");
     return;
   }
 
-  let movies = readData(MOVIES_FILE);
-  
-  // Crea l'oggetto del nuovo film con un ID univoco basato sul timestamp
-  const newMovie = {
-    id: Date.now().toString(),
-    title: title,
-    description: description,
-    coverUrl: coverUrl,
-    director: director,
-    ratings: [],
-    reviews: []
+  // Carica i film esistenti
+  var film = leggiFile(FILE_FILM);
+
+  // Crea l'oggetto del nuovo film
+  var nuovoFilm = {
+    id: Date.now().toString(), // ID univoco basato sul tempo attuale (es: "1709123456789")
+    title: titolo,
+    description: descrizione,
+    coverUrl: copertina,
+    director: regista,
+    ratings: [],  // Inizia senza voti
+    reviews: []   // Inizia senza recensioni
   };
 
-  movies.push(newMovie);
-  writeData(MOVIES_FILE, movies);
+  // Aggiunge il film all'array e salva il file
+  film.push(nuovoFilm);
+  scriviFile(FILE_FILM, film);
 
-  res.redirect("/catalog");
+  res.redirect("/catalog"); // Torna al catalogo
 });
 
-/**
- * API per votare un film.
- * Ogni utente può votare un film una sola volta; se vota di nuovo, il voto precedente viene aggiornato.
- */
-app.post("/api/movies/:id/rate", requireAuth, function (req, res) {
-  const movieId = req.params.id;
-  const ratingScore = parseInt(req.body.rating, 10);
-  const currentUser = req.session.user.username;
+// =============================================================
+//  ⭐ API VOTA FILM  →  POST /api/movies/:id/rate
+//  Permette di votare un film da 1 a 5 stelle.
+//  Se hai già votato, il tuo voto precedente viene aggiornato.
+//  ⚠️ Protetta: solo utenti loggati possono usarla
+// =============================================================
 
-  if (isNaN(ratingScore) || ratingScore < 1 || ratingScore > 5) {
-    res.status(400).json({ error: "Voto non valido" });
+app.post("/api/movies/:id/rate", controllaLogin, function (req, res) {
+  var idFilm   = req.params.id;                        // ID del film dall'URL
+  var voto     = parseInt(req.body.rating, 10);         // Il voto (da 1 a 5)
+  var username = req.session.utente.username;           // Chi sta votando
+
+  // Il voto deve essere un numero tra 1 e 5
+  if (isNaN(voto) || voto < 1 || voto > 5) {
+    res.status(400).json({ error: "Il voto deve essere tra 1 e 5!" });
     return;
   }
 
-  let movies = readData(MOVIES_FILE);
-  let movieFound = null;
+  // Carica tutti i film
+  var film = leggiFile(FILE_FILM);
+  var filmTrovato = trovaFilmPerId(film, idFilm);
 
-  for (let i = 0; i < movies.length; i++) {
-    if (movies[i].id === movieId) {
-      movieFound = movies[i];
+  // Se il film non esiste, errore
+  if (filmTrovato === null) {
+    res.status(404).json({ error: "Film non trovato!" });
+    return;
+  }
+
+  // Assicuriamoci che l'array dei voti esista
+  if (!filmTrovato.ratings) {
+    filmTrovato.ratings = [];
+  }
+
+  // Converti i vecchi voti numerici nel formato nuovo {user, score}
+  // (compatibilità con versioni precedenti del database)
+  for (var i = 0; i < filmTrovato.ratings.length; i++) {
+    if (typeof filmTrovato.ratings[i] === "number") {
+      filmTrovato.ratings[i] = {
+        user: "Utente Vecchio " + i,
+        score: filmTrovato.ratings[i]
+      };
+    }
+  }
+
+  // Controlla se questo utente ha già votato
+  var haGiaVotato = false;
+
+  for (var j = 0; j < filmTrovato.ratings.length; j++) {
+    if (filmTrovato.ratings[j].user === username) {
+      // Ha già votato: aggiorna il vecchio voto con quello nuovo
+      filmTrovato.ratings[j].score = voto;
+      haGiaVotato = true;
       break;
     }
   }
 
-  if (movieFound === null) {
-    res.status(404).json({ error: "Film non trovato" });
-    return;
+  // Se non aveva mai votato, aggiungi il suo voto nuovo
+  if (!haGiaVotato) {
+    filmTrovato.ratings.push({ user: username, score: voto });
   }
 
-  if (!movieFound.ratings) {
-    movieFound.ratings = [];
-  }
+  // Salva i film aggiornati nel file
+  scriviFile(FILE_FILM, film);
 
-  // Converte i vecchi voti numerici nel nuovo formato oggetto per evitare crash
-  for (let s = 0; s < movieFound.ratings.length; s++) {
-    if (typeof movieFound.ratings[s] === 'number') {
-       movieFound.ratings[s] = { user: "Vecchio Utente " + s, score: movieFound.ratings[s] };
-    }
-  }
-
-  // Controlla se l'utente ha già votato questo film
-  let userAlreadyRated = false;
-  for (let j = 0; j < movieFound.ratings.length; j++) {
-    if (movieFound.ratings[j].user === currentUser) {
-      // Se trovato, aggiorna il punteggio esistente
-      movieFound.ratings[j].score = ratingScore;
-      userAlreadyRated = true;
-      break;
-    }
-  }
-
-  // Se l'utente non ha mai votato, aggiunge un nuovo record
-  if (userAlreadyRated === false) {
-    movieFound.ratings.push({
-      user: currentUser,
-      score: ratingScore
-    });
-  }
-
-  writeData(MOVIES_FILE, movies);
-
-  // Ricalcola la nuova media per inviarla come risposta alla chiamata AJAX
-  let sum = 0;
-  for (let k = 0; k < movieFound.ratings.length; k++) {
-    sum = sum + movieFound.ratings[k].score;
-  }
-  let avgRating = (sum / movieFound.ratings.length).toFixed(1);
-
-  res.json({ success: true, avgRating: avgRating });
+  // Ricalcola la media e rispondi con i dati aggiornati (risposta JSON per AJAX)
+  var nuovaMedia = calcolaMedia(filmTrovato.ratings);
+  res.json({ success: true, avgRating: nuovaMedia });
 });
 
-/**
- * Pagina dei dettagli di un singolo film.
- */
-app.get("/movie/:id", requireAuth, function (req, res) {
-  const movieId = req.params.id;
-  let movies = readData(MOVIES_FILE);
-  let movieFound = null;
+// =============================================================
+//  🎞️ ROTTA DETTAGLIO FILM  →  GET /movie/:id
+//  Mostra la pagina con i dettagli di un singolo film
+//  ⚠️ Protetta: solo utenti loggati possono vederla
+// =============================================================
 
-  for (let i = 0; i < movies.length; i++) {
-    if (movies[i].id === movieId) {
-      movieFound = movies[i];
-      break;
-    }
-  }
+app.get("/movie/:id", controllaLogin, function (req, res) {
+  var idFilm = req.params.id; // ID del film dall'URL
 
-  if (movieFound === null) {
-    res.status(404).send("Film non trovato");
+  // Carica tutti i film e cerca quello con questo ID
+  var film = leggiFile(FILE_FILM);
+  var filmTrovato = trovaFilmPerId(film, idFilm);
+
+  // Se il film non esiste, mostra errore 404
+  if (filmTrovato === null) {
+    res.status(404).send("Film non trovato!");
     return;
   }
 
-  // Calcolo della media voti specifica per questo film
-  let avgRating = 0;
-  if (movieFound.ratings && movieFound.ratings.length > 0) {
-    let sum = 0;
-    for (let j = 0; j < movieFound.ratings.length; j++) {
-      if (typeof movieFound.ratings[j] === 'number') {
-         sum = sum + movieFound.ratings[j];
-      } else {
-         sum = sum + movieFound.ratings[j].score;
-      }
-    }
-    avgRating = (sum / movieFound.ratings.length).toFixed(1);
-  }
-  
-  movieFound.avgRating = avgRating;
+  // Calcola la media voti per questo film specifico
+  filmTrovato.avgRating = calcolaMedia(filmTrovato.ratings);
 
+  // Manda i dati alla pagina "movie.ejs"
   res.render("movie", {
-    user: req.session.user,
-    movie: movieFound
+    user: req.session.utente,
+    movie: filmTrovato
   });
 });
 
-/**
- * API per aggiungere una recensione testuale a un film.
- */
-app.post("/movie/:id/review", requireAuth, function (req, res) {
-  const movieId = req.params.id;
-  const reviewText = req.body.reviewText;
+// =============================================================
+//  ✍️ ROTTA AGGIUNGI RECENSIONE  →  POST /movie/:id/review
+//  Salva una recensione testuale per un film
+//  ⚠️ Protetta: solo utenti loggati possono usarla
+// =============================================================
 
-  if (reviewText === "") {
-    // Se la recensione è vuota, ricarica semplicemente la pagina
-    res.redirect("/movie/" + movieId);
+app.post("/movie/:id/review", controllaLogin, function (req, res) {
+  var idFilm      = req.params.id;
+  var testoReview = req.body.reviewText;
+
+  // Se il testo è vuoto, torna alla pagina del film senza fare nulla
+  if (!testoReview) {
+    res.redirect("/movie/" + idFilm);
     return;
   }
 
-  let movies = readData(MOVIES_FILE);
-  let movieFound = null;
+  // Carica i film e cerca quello giusto
+  var film = leggiFile(FILE_FILM);
+  var filmTrovato = trovaFilmPerId(film, idFilm);
 
-  for (let i = 0; i < movies.length; i++) {
-    if (movies[i].id === movieId) {
-      movieFound = movies[i];
-      break;
+  // Aggiunge la recensione solo se il film esiste
+  if (filmTrovato !== null) {
+    // Assicuriamoci che l'array delle recensioni esista
+    if (!filmTrovato.reviews) {
+      filmTrovato.reviews = [];
     }
+
+    // Crea l'oggetto recensione con autore, testo e data
+    var nuovaRecensione = {
+      user: req.session.utente.username,
+      text: testoReview,
+      date: new Date().toISOString() // Data e ora di adesso in formato standard
+    };
+
+    // Aggiunge la recensione e salva
+    filmTrovato.reviews.push(nuovaRecensione);
+    scriviFile(FILE_FILM, film);
   }
 
-  if (movieFound !== null) {
-    if (!movieFound.reviews) {
-      movieFound.reviews = [];
-    }
-    
-    // Aggiunge la recensione con autore e data corrente in formato ISO
-    movieFound.reviews.push({
-      user: req.session.user.username,
-      text: reviewText,
-      date: new Date().toISOString()
-    });
-    
-    writeData(MOVIES_FILE, movies);
-  }
-
-  res.redirect("/movie/" + movieId);
+  // Torna alla pagina del film
+  res.redirect("/movie/" + idFilm);
 });
 
-// Avvio del server sulla porta definita
+// =============================================================
+//  🟢 AVVIO DEL SERVER
+//  Il server comincia ad ascoltare sulla porta 3000
+// =============================================================
+
 app.listen(PORT, function () {
-  console.log("Server avviato sulla porta " + PORT);
+  console.log("✅ Server avviato! Vai su http://localhost:" + PORT);
 });

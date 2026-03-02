@@ -1,121 +1,164 @@
-/**
- * Questo script gestisce le interazioni dinamiche sul client, 
- * come il sistema di voto con le stelle e la gestione della modale.
- */
-document.addEventListener('DOMContentLoaded', () => {
-    
-    // --- Logica per il Sistema di Voto con le Stelle ---
-    
-    // Seleziona tutti i contenitori di stelle nelle card dei film
-    const starContainers = document.querySelectorAll('.star-rating');
+// =============================================================
+//  📋 main.js  —  Codice che gira nel BROWSER (lato client)
+//  Questo file gestisce ciò che succede sulla pagina
+//  SENZA ricaricarla: voto stelle, modale, barra di ricerca
+// =============================================================
 
-    starContainers.forEach(container => {
-        const stars = container.querySelectorAll('.star');
-        const movieId = container.getAttribute('data-movie-id');
+// Aspettiamo che la pagina sia completamente caricata prima di fare qualsiasi cosa
+document.addEventListener("DOMContentLoaded", function () {
 
-        // Aggiunge gli eventi per ogni singola stella dentro il contenitore
-        stars.forEach(star => {
-            
-            // Effetto hover: illumina le stelle quando il mouse passa sopra
-            star.addEventListener('mouseenter', () => {
-                const rating = parseInt(star.getAttribute('data-rating'));
-                highlightStars(stars, rating);
-            });
+  // =============================================================
+  //  ⭐ SEZIONE 1: SISTEMA DI VOTO CON LE STELLE
+  //  Gestisce l'effetto hover e il click per votare un film
+  // =============================================================
 
-            // Reset: toglie l'illuminazione quando il mouse esce
-            star.addEventListener('mouseleave', () => {
-                resetStars(stars);
-            });
+  // Prendiamo tutti i "blocchi stelle" presenti nella pagina
+  // (ogni card del film ne ha uno)
+  var blocchiStelle = document.querySelectorAll(".star-rating");
 
-            /**
-             * Click per votare: invia una richiesta AJAX (fetch) al server
-             * per registrare il voto senza ricaricare l'intera pagina immediatamente.
-             */
-            star.addEventListener('click', async (e) => {
-                // Impedisce che il click sulla stella attivi anche il link della card
-                e.preventDefault();
-                e.stopPropagation();
+  // Per ogni blocco stelle, impostiamo i comportamenti
+  for (var b = 0; b < blocchiStelle.length; b++) {
+    var blocco  = blocchiStelle[b];
+    var stelle  = blocco.querySelectorAll(".star");
+    var idFilm  = blocco.getAttribute("data-movie-id"); // ID del film salvato nell'HTML
 
-                const rating = parseInt(star.getAttribute('data-rating'));
-                
-                try {
-                    // Chiamata POST all'API del server
-                    const response = await fetch(`/api/movies/${movieId}/rate`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ rating })
-                    });
+    // Aggiungiamo i comportamenti a ogni singola stella del blocco
+    // Usiamo una funzione separata per evitare problemi con le variabili nei cicli
+    impostaComportamentoStelle(blocco, stelle, idFilm);
+  }
 
-                    const result = await response.json();
+  // ----------------------------------------------------------
+  // FUNZIONE: imposta gli eventi per un gruppo di stelle
+  // ----------------------------------------------------------
+  function impostaComportamentoStelle(blocco, stelle, idFilm) {
+    for (var i = 0; i < stelle.length; i++) {
+      var stella = stelle[i];
 
-                    if (result.success) {
-                        // Feedback visivo immediato all'utente
-                        container.innerHTML = `<span class="text-success fw-bold fade-in-up"><i class="bi bi-check-circle-fill me-1"></i> Voto ${rating} inviato!</span>`;
-                        
-                        // Aggiorna il badge della media dei voti sulla card se presente
-                        const card = container.closest('.movie-card');
-                        if (card) {
-                            const badge = card.querySelector('.average-rating');
-                            if (badge) badge.innerText = result.avgRating;
-                        }
+      // 🌟 HOVER: quando il mouse passa sopra una stella, illumina quelle precedenti
+      stella.addEventListener("mouseenter", function () {
+        var valore = parseInt(this.getAttribute("data-rating"));
+        illuminaStelle(stelle, valore);
+      });
 
-                        // Ricarica la pagina dopo un secondo per riflettere i cambiamenti ovunque
-                        setTimeout(() => {
-                            window.location.reload(); 
-                        }, 1000);
-                    }
-                } catch (error) {
-                    console.error('Errore durante il voto:', error);
-                    alert('Si è verificato un errore durante l\'invio del voto.');
-                }
-            });
-        });
-    });
+      // 🌑 MOUSE FUORI: quando il mouse esce, toglie l'illuminazione
+      stella.addEventListener("mouseleave", function () {
+        spegniStelle(stelle);
+      });
 
-    /**
-     * Funzione per illuminare le stelle fino a quella selezionata (effetto hover).
-     */
-    function highlightStars(stars, rating) {
-        stars.forEach(star => {
-            const currentRating = parseInt(star.getAttribute('data-rating'));
-            if (currentRating <= rating) {
-                star.classList.add('hovered'); // Aggiunge la classe CSS per l'illuminazione
-            } else {
-                star.classList.remove('hovered');
-            }
-        });
+      // 👆 CLICK: quando si clicca su una stella, manda il voto al server
+      stella.addEventListener("click", function (evento) {
+        // Blocchiamo il comportamento di default (aprirebbe il link della card)
+        evento.preventDefault();
+        evento.stopPropagation();
+
+        var voto = parseInt(this.getAttribute("data-rating"));
+
+        // Chiamiamo la funzione che manda il voto al server
+        mandaVoto(blocco, stelle, idFilm, voto);
+      });
     }
+  }
 
-    /**
-     * Funzione per rimuovere l'effetto hover da tutte le stelle.
-     */
-    function resetStars(stars) {
-        stars.forEach(star => {
-            star.classList.remove('hovered');
-        });
+  // ----------------------------------------------------------
+  // FUNZIONE: illumina le stelle fino al numero indicato
+  // Esempio: se rating = 3, illumina le stelle 1, 2 e 3
+  // ----------------------------------------------------------
+  function illuminaStelle(stelle, rating) {
+    for (var i = 0; i < stelle.length; i++) {
+      var numeroStella = parseInt(stelle[i].getAttribute("data-rating"));
+
+      if (numeroStella <= rating) {
+        stelle[i].classList.add("hovered");    // Aggiunge la classe CSS che la illumina
+      } else {
+        stelle[i].classList.remove("hovered"); // Toglie la classe dalle stelle dopo
+      }
     }
+  }
 
-    // --- Miglioramenti UX per le Modali di Bootstrap 5 ---
-
-    // Quando si apre la modale per aggiungere un film, mette automaticamente il focus sul campo Titolo
-    const addMovieModal = document.getElementById('addMovieModal');
-    if (addMovieModal) {
-        addMovieModal.addEventListener('shown.bs.modal', () => {
-            const titleInput = addMovieModal.querySelector('input[name="title"]');
-            if (titleInput) titleInput.focus();
-        });
+  // ----------------------------------------------------------
+  // FUNZIONE: spegni tutte le stelle (togli l'illuminazione da tutte)
+  // ----------------------------------------------------------
+  function spegniStelle(stelle) {
+    for (var i = 0; i < stelle.length; i++) {
+      stelle[i].classList.remove("hovered");
     }
+  }
 
-    // --- Gestione della barra di ricerca ---
+  // ----------------------------------------------------------
+  // FUNZIONE: manda il voto al server usando fetch (senza ricaricare la pagina)
+  // ----------------------------------------------------------
+  function mandaVoto(blocco, stelle, idFilm, voto) {
+    // Mandiamo una richiesta POST al server con il voto scelto
+    fetch("/api/movies/" + idFilm + "/rate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json" // Diciamo al server che mandiamo JSON
+      },
+      body: JSON.stringify({ rating: voto }) // Il voto in formato JSON
+    })
+    .then(function (risposta) {
+      return risposta.json(); // Convertiamo la risposta del server in oggetto JS
+    })
+    .then(function (dati) {
+      // Se il server ci dice che è andato tutto bene...
+      if (dati.success) {
 
-    const searchInput = document.querySelector('.search-form input[type="search"]');
-    if (searchInput) {
-        // Se c'è già un testo cercato, posiziona il cursore alla fine della parola
-        if (searchInput.value) {
-            const length = searchInput.value.length;
-            searchInput.setSelectionRange(length, length);
+        // Sostituiamo le stelle con un messaggio di conferma verde
+        blocco.innerHTML = '<span class="text-success fw-bold">✅ Voto ' + voto + ' inviato!</span>';
+
+        // Aggiorniamo anche il badge con la media dei voti sulla card del film
+        var card  = blocco.closest(".movie-card");
+        if (card) {
+          var badge = card.querySelector(".average-rating");
+          if (badge) {
+            badge.innerText = dati.avgRating; // Mostra la nuova media
+          }
         }
-    }
-});
+
+        // Dopo 1 secondo, ricarichiamo la pagina per aggiornare tutto
+        setTimeout(function () {
+          window.location.reload();
+        }, 1000);
+      }
+    })
+    .catch(function (errore) {
+      // Se qualcosa è andato storto, mostriamo un messaggio di errore
+      console.error("Errore durante il voto:", errore);
+      alert("Qualcosa è andato storto! Riprova.");
+    });
+  }
+
+  // =============================================================
+  //  🪟 SEZIONE 2: MODALE AGGIUNGI FILM
+  //  Quando si apre la finestra per aggiungere un film,
+  //  il cursore va automaticamente nel campo "Titolo"
+  // =============================================================
+
+  var modaleAggiungiFilm = document.getElementById("addMovieModal");
+
+  if (modaleAggiungiFilm) {
+    // L'evento "shown.bs.modal" scatta quando la modale di Bootstrap è completamente aperta
+    modaleAggiungiFilm.addEventListener("shown.bs.modal", function () {
+      var campoTitolo = modaleAggiungiFilm.querySelector('input[name="title"]');
+
+      if (campoTitolo) {
+        campoTitolo.focus(); // Mette il cursore nel campo titolo automaticamente
+      }
+    });
+  }
+
+  // =============================================================
+  //  🔍 SEZIONE 3: BARRA DI RICERCA
+  //  Se l'utente ha già cercato qualcosa, mettiamo il cursore
+  //  alla FINE del testo (non all'inizio)
+  // =============================================================
+
+  var campoCerca = document.querySelector(".search-form input[type='search']");
+
+  if (campoCerca && campoCerca.value) {
+    // Spostiamo il cursore alla fine del testo già scritto
+    var lunghezza = campoCerca.value.length;
+    campoCerca.setSelectionRange(lunghezza, lunghezza);
+  }
+
+}); // Fine del DOMContentLoaded
